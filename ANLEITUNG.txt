@@ -1,0 +1,27 @@
+KLADDE – als eigene App aufs Handy (kostenlos, einmalig ca. 10 Minuten, am besten am PC)
+
+1. Konto: Auf https://github.com kostenlos registrieren (falls noch keins).
+2. Neues Repository: oben rechts "+" > "New repository".
+   Name: kladde  –  auf "Public" lassen  –  "Create repository".
+3. Dateien hochladen: auf "uploading an existing file" klicken.
+   Den INHALT des entpackten Ordners "kladde" hineinziehen
+   (index.html, sw.js, manifest.webmanifest und die Ordner icons und fonts).
+   Wichtig: index.html muss ganz oben liegen, nicht in einem Unterordner.
+   Unten "Commit changes".
+4. Veröffentlichen: Settings > Pages > Source: "Deploy from a branch",
+   Branch: main, Ordner: / (root) > Save.
+   Nach 1–2 Minuten steht dort die Adresse, z. B.
+   https://DEINNAME.github.io/kladde/
+5. Aufs Handy: Adresse in Chrome öffnen > drei Punkte > "App installieren"
+   (oder "Zum Startbildschirm hinzufügen"). Fertig – eigenes Icon, läuft offline.
+
+Hinweise
+- Die Dateien der App sind öffentlich (das ist nur der Programmcode).
+  Deine Einträge liegen NICHT bei GitHub, sondern nur auf deinem Handy.
+- Alte Einträge aus dem Claude-Link: dort unter "Sicherung" speichern,
+  in der neuen App unter "Sicherung" > "Sicherung laden".
+- Regelmäßig "Sicherung speichern" – sonst sind die Einträge beim
+  Handywechsel oder Löschen der App weg.
+- Update einspielen: geänderte Dateien bei GitHub erneut hochladen und in
+  sw.js die VERSION hochzählen (kladde-v2 usw.). Die App holt sich das
+  Update beim nächsten Start mit Internet.
