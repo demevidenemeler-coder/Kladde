@@ -1,5 +1,5 @@
 // Kladde – Offline-Speicher. Bei jeder Änderung an der App VERSION hochzählen.
-const VERSION = 'kladde-v2';
+const VERSION = 'kladde-v4';
 const FILES = [
   './', './index.html', './manifest.webmanifest',
   './icons/icon-192.png', './icons/icon-512.png', './icons/icon-maskable-512.png', './icons/apple-touch-icon.png',
@@ -18,9 +18,18 @@ self.addEventListener('fetch', e => {
   if (url.origin !== location.origin) return;
   // Seite: erst Netz (für Updates), sonst Offline-Kopie. Rest: Offline-Kopie zuerst.
   if (e.request.mode === 'navigate') {
-    e.respondWith(fetch(e.request).then(r => { const c = r.clone(); caches.open(VERSION).then(x => x.put('./index.html', c)); return r; })
-      .catch(() => caches.match('./index.html')));
+    // Seite: erst Netz (für Updates). Nur eine funktionierende Seite wird gespeichert;
+    // bei Fehler (offline, 404, GitHub-Störung) kommt die gespeicherte App.
+    e.respondWith(
+      fetch(e.request).then(r => {
+        if (r.ok) { const c = r.clone(); caches.open(VERSION).then(x => x.put('./index.html', c)); return r; }
+        return caches.match('./index.html').then(cached => cached || r);
+      }).catch(() => caches.match('./index.html'))
+    );
     return;
   }
-  e.respondWith(caches.match(e.request).then(r => r || fetch(e.request)));
+  e.respondWith(caches.match(e.request).then(r => r || fetch(e.request).then(res => {
+    if (res.ok) { const c = res.clone(); caches.open(VERSION).then(x => x.put(e.request, c)); }
+    return res;
+  })));
 });
