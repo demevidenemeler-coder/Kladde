@@ -414,7 +414,7 @@ html[data-view="tiles"] .dream .dday span{margin:0}
 
 <script>
 (function(){
-const VERSION='13';
+const VERSION='14';
 const LS='kladde.v1', LSB='kladde.lastBackup', LST='kladde.tab', LSS='kladde.settings';
 const $=s=>document.querySelector(s);
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -1127,9 +1127,11 @@ async function doExport(){
 
 /* ---------- Kalender-Datei (.ics) ---------- */
 const CAL_ICON='<rect x="4" y="5" width="16" height="16" rx="2"/><path d="M4 10h16M9 3v4M15 3v4"/>';
-const icsEsc=t=>String(t??'').replace(/\\/g,'\\\\').replace(/;/g,'\;').replace(/,/g,'\\,').replace(/\r?\n/g,'\\n');
+const icsEsc=t=>String(t??'').replace(/\\/g,'\\\\').replace(/;/g,'\\;').replace(/,/g,'\\,').replace(/\r?\n/g,'\\n');
 const icsD=p=>String(p.y).padStart(4,'0')+String(p.m).padStart(2,'0')+String(p.d).padStart(2,'0');
-function icsFold(line){const out=[];let t=line;while(t.length>60){out.push(t.slice(0,60));t=' '+t.slice(60)}out.push(t);return out.join('\r\n')}
+/* Zeilen höchstens 75 Byte lang (RFC 5545). Umbrochen wird nur zwischen ganzen Zeichen, sonst zerbrechen Umlaute und Emoji. */
+const utf8Len=c=>{const n=c.codePointAt(0);return n<0x80?1:n<0x800?2:n<0x10000?3:4};
+function icsFold(line){const out=[];let cur='',n=0;for(const ch of line){const b=utf8Len(ch);if(n+b>75){out.push(cur);cur=' ';n=1}cur+=ch;n+=b}out.push(cur);return out.join('\r\n')}
 function buildIcs(evts){
   const stamp=new Date().toISOString().replace(/[-:]/g,'').replace(/\.\d+/,'');
   const L=['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//Kladde//DE','CALSCALE:GREGORIAN'];
