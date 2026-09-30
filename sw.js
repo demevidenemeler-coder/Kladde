@@ -1,5 +1,8 @@
-// Kladde – Offline-Speicher. Bei jeder Änderung an der App VERSION hochzählen.
-const VERSION = 'kladde-v12';
+// Kladde – Offline-Speicher.
+// VERSION muss zu VERSION in index.html passen (prüft der Test „files.spec.mjs“).
+// Vergessenes Hochzählen ist nicht mehr schlimm: Die Seite kommt immer frisch aus dem Netz,
+// alle anderen Dateien werden im Hintergrund nachgeladen (siehe unten). Hochzählen räumt nur alte Speicher auf.
+const VERSION = 'kladde-v13';
 const FILES = [
   './', './index.html', './manifest.webmanifest',
   './icons/icon-192.png', './icons/icon-512.png', './icons/icon-maskable-512.png', './icons/apple-touch-icon.png',
@@ -34,8 +37,12 @@ self.addEventListener('fetch', e => {
     );
     return;
   }
-  e.respondWith(caches.match(e.request).then(r => r || fetch(e.request).then(res => {
-    if (res.ok) { const c = res.clone(); caches.open(VERSION).then(x => x.put(e.request, c)); }
+  // Übrige Dateien: sofort die Offline-Kopie liefern und im Hintergrund die aktuelle Fassung holen.
+  // So kommen geänderte Icons, Schriften oder das Manifest beim nächsten Öffnen an, auch ohne neue VERSION.
+  const update = fetch(e.request).then(res => {
+    if (res.ok) { const c = res.clone(); return caches.open(VERSION).then(x => x.put(e.request, c)).then(() => res); }
     return res;
-  })));
+  });
+  e.waitUntil(update.then(() => {}, () => {}));
+  e.respondWith(caches.match(e.request).then(r => r || update));
 });
