@@ -103,6 +103,61 @@ test.describe('Zähler', () => {
     await expect(streak).toContainText('Neu gestartet1 Mal');
   });
 
+  test('Neu starten trägt die Serie in „Bisherige Serien“ ein', async ({ page }) => {
+    await seed(page, [{ id: 'c1', kind: 'counter', title: 'Rauchfrei', date: '2026-09-01', mode: 'since', note: '' }]);
+    await tab(page, 'Zähler').click();
+    await page.locator('#main').getByText('Rauchfrei').click();
+    await expect(page.locator('.streak .hist')).toHaveCount(0); // noch kein Verlauf
+    await page.locator('#restart').click();
+    await page.locator('.dlg .yes').click();
+    await page.reload();
+    await tab(page, 'Zähler').click();
+    await page.locator('#main').getByText('Rauchfrei').click();
+    const hist = page.locator('.streak .hist');
+    await expect(hist.locator('h3')).toHaveText('Bisherige Serien');
+    await expect(hist.locator('.stat')).toHaveText(['01.09.2026 – 30.09.2026' + '29 Tage']);
+  });
+
+  test('Verlauf: neueste zuerst, Durchschnitt, ältere aufklappbar, kaputte Einträge ignoriert', async ({ page }) => {
+    const history = [
+      { from: '2025-01-01', to: '2025-01-11', days: 10 },
+      { from: '2025-02-01', to: '2025-02-21', days: 20 },
+      { from: 'kaputt', to: '2025-03-01', days: 99 },
+      { from: '2025-03-01', to: '2025-03-31', days: 30 },
+      { from: '2025-04-01', to: '2025-04-02', days: 1 },
+      { from: '2025-05-01', to: '2025-05-06', days: 5 },
+      { from: '2025-06-01', to: '2025-06-15', days: 14 },
+      null,
+      { from: '2025-07-01', to: '2025-07-03', days: 2 },
+    ];
+    await seed(page, [{ id: 'c1', kind: 'counter', title: 'Sport', date: '2026-09-20', mode: 'since', note: '', best: 30, restarts: 7, history }]);
+    await tab(page, 'Zähler').click();
+    await page.locator('#main').getByText('Sport').click();
+    const hist = page.locator('.streak .hist');
+    // (10+20+30+1+5+14+2)/7 = 11,7 → 12
+    await expect(hist.locator(':scope > .stat').first()).toHaveText('Durchschnitt12 Tage');
+    const visible = hist.locator(':scope > .stat');
+    await expect(visible).toHaveCount(6); // Durchschnitt + 5 neueste
+    await expect(visible.nth(1)).toHaveText('01.07.2025 – 03.07.2025' + '2 Tage');
+    await expect(visible.nth(2)).toContainText('14 Tage');
+    await expect(visible.nth(5)).toContainText('30 Tage');
+    await expect(hist.locator('summary')).toHaveText('2 ältere anzeigen');
+    await expect(hist.locator('details .stat').first()).toBeHidden();
+    await hist.locator('summary').click();
+    await expect(hist.locator('details .stat')).toHaveText(['01.02.2025 – 21.02.2025' + '20 Tage', '01.01.2025 – 11.01.2025' + '10 Tage']);
+    await expect(hist).not.toContainText('99');
+    await expect(page.locator('.streak')).toContainText('Rekord30 Tage');
+  });
+
+  test('Verlauf ist gegen eingeschleustes HTML geschützt', async ({ page }) => {
+    await seed(page, [{ id: 'c1', kind: 'counter', title: 'X', date: '2026-09-20', mode: 'since', note: '',
+      history: [{ from: '2025-01-01', to: '2025-01-02', days: '<img src=x onerror="window.__boom=1">' }] }]);
+    await tab(page, 'Zähler').click();
+    await page.locator('#main .item').first().click();
+    await expect(page.locator('.streak .hist .stat')).toHaveText('01.01.2025 – 02.01.2025' + '0 Tage');
+    expect(await page.evaluate(() => window.__boom)).toBeUndefined();
+  });
+
   test('„Heute und die nächsten Tage“ zeigt anstehende Termine und Fristen', async ({ page }) => {
     await seed(page, [
       { id: 'c1', kind: 'counter', title: 'Urlaub', date: '2026-10-02', mode: 'until', note: '' },

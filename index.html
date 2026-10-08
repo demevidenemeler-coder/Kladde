@@ -206,6 +206,10 @@ textarea.field.body{min-height:42vh;resize:none;font-family:var(--read);font-siz
 .switch[aria-checked="true"] i::after{transform:translateX(18px)}
 .streak{margin-top:22px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px}
 .streak h3{margin:0 0 4px;font-size:16px}
+.streak .hist{margin:12px 0 4px;padding-top:10px;border-top:1px solid var(--line)}
+.streak .hist h3{font-size:14px;color:var(--muted)}
+.streak .hist .stat:first-of-type{border-top:0}
+.streak details summary{padding:8px 0;color:var(--ink);font-weight:600;cursor:pointer}
 .badge{display:inline-block;margin-top:6px;font-size:13px;font-weight:700;padding:3px 10px;border-radius:999px;background:var(--red-weak);color:var(--red)}
 .counter[data-tone="mile"]{border-color:var(--red);border-width:1.5px}
 .counter[data-tone="mile"] .num b{color:var(--red)}
@@ -414,7 +418,7 @@ html[data-view="tiles"] .dream .dday span{margin:0}
 
 <script>
 (function(){
-const VERSION='14';
+const VERSION='15';
 const LS='kladde.v1', LSB='kladde.lastBackup', LST='kladde.tab', LSS='kladde.settings';
 const $=s=>document.querySelector(s);
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -1518,6 +1522,7 @@ function streakBox(){
     <div class="stat"><span>Aktuell</span><span>${d} ${T(d)}</span></div>
     <div class="stat"><span>Rekord</span><span>${best} ${T(best)}</span></div>
     <div class="stat"><span>Neu gestartet</span><span>${draft.restarts||0} Mal</span></div>
+    ${historyBox()}
     <button class="btn secondary" id="restart">Neu starten ab heute</button>
     <div class="hint">Zum Beispiel nach einem Rückfall. Die bisherige Serie zählt weiter für den Rekord.</div></div>`;
   $('#restart').onclick=async()=>{
@@ -1528,6 +1533,17 @@ function streakBox(){
     it.date=today();touch(clean(it));shutEditor();render();
     toast('Neu gestartet. Rekord: '+best+' '+T(best));
   };
+}
+/* Frühere Serien: wird bei „Neu starten“ gespeichert (von, bis, Tage). Neueste zuerst, ab 5 Einträgen aufklappbar. */
+function historyBox(){
+  const h=(draft.history||[]).filter(x=>x&&/^\d{4}-\d{2}-\d{2}$/.test(x.from)&&/^\d{4}-\d{2}-\d{2}$/.test(x.to)).slice().reverse();
+  if(!h.length)return'';
+  const row=x=>{const n=Math.max(0,+x.days||0);return`<div class="stat"><span>${fmtShort(P(x.from))} – ${fmtShort(P(x.to))}</span><span>${n} ${T(n)}</span></div>`};
+  const avg=Math.round(h.reduce((a,x)=>a+Math.max(0,+x.days||0),0)/h.length);
+  return `<div class="hist"><h3>Bisherige Serien</h3>
+    ${h.length>1?`<div class="stat"><span>Durchschnitt</span><span>${avg} ${T(avg)}</span></div>`:''}
+    ${h.slice(0,5).map(row).join('')}
+    ${h.length>5?`<details><summary>${h.length-5} ältere anzeigen</summary>${h.slice(5).map(row).join('')}</details>`:''}</div>`;
 }
 function cpv(){$('#pv').innerHTML='<li>'+counterCard({...draft,title:draft.title||'Ohne Namen'})+'</li>';streakBox();calBox()}
 

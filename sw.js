@@ -2,7 +2,7 @@
 // VERSION muss zu VERSION in index.html passen (prüft der Test „files.spec.mjs“).
 // Vergessenes Hochzählen ist nicht mehr schlimm: Die Seite kommt immer frisch aus dem Netz,
 // alle anderen Dateien werden im Hintergrund nachgeladen (siehe unten). Hochzählen räumt nur alte Speicher auf.
-const VERSION = 'kladde-v14';
+const VERSION = 'kladde-v15';
 const FILES = [
   './', './index.html', './manifest.webmanifest',
   './icons/icon-192.png', './icons/icon-512.png', './icons/icon-maskable-512.png', './icons/apple-touch-icon.png',
