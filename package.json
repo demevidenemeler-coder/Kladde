@@ -1,0 +1,11 @@
+{
+  "name": "kladde",
+  "private": true,
+  "description": "Nur für die Tests. Die App selbst braucht kein npm und keinen Build.",
+  "scripts": {
+    "test": "playwright test"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.56.1"
+  }
+}
